@@ -1,0 +1,8 @@
+name: DynamicDNS
+version: 1.0.0
+main: me.leeyi.dyndns.DynDNS
+api-version: '26.2'
+default-permission: op
+commands:
+  dyndns:
+    description: Commands to manage the dyndns plugin

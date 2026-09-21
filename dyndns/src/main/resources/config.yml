@@ -1,0 +1,15 @@
+zone_id:
+record_id:
+
+# Domain to update
+domain:
+
+# Cloudflare API Token
+api_token:
+
+# API to contact for IP Address
+api_address: "https://api.ipify.org"
+
+proxied: true
+
+ttl: 3000
