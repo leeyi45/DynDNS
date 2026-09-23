@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.logging.Logger;
@@ -14,18 +15,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import me.leeyi.dyndns.InvalidConfigException;
-import me.leeyi.dyndns.base.HttpUpdater;
+import me.leeyi.dyndns.base.DNSUpdater;
 
 /**
  * Concrete implementation for Cloudflare DNS
  */
-public class CloudflareUpdater extends HttpUpdater {
+public class CloudflareUpdater extends DNSUpdater {
   public CloudflareUpdater(
     final @NotNull Logger logger,
     final @NotNull JavaPlugin parent,
     final @Nullable ConfigurationSection config
   ) throws InvalidConfigException {
-    super(logger, parent, config);
+    super(logger, parent);
 
     this.domain = this.getStringFromSection("domain", config);
     this.zoneId = this.getStringFromSection("zone_id", config);
@@ -34,6 +35,8 @@ public class CloudflareUpdater extends HttpUpdater {
     this.ttl = config.getInt("ttl", 1);
     this.proxied = config.getBoolean("proxied");
   }
+
+  private final HttpClient httpClient = HttpClient.newHttpClient();
 
   @Override
   public @NotNull String getName() { return "cloudflare"; }
@@ -100,7 +103,7 @@ public class CloudflareUpdater extends HttpUpdater {
   }
 
   @Override
-  protected boolean updateDnsInternal(final InetAddress ip) {
+  public boolean updateDns(final InetAddress ip) {
     final String rawUri = String.format("https://api.cloudflare.com/client/v4/zones/%s/dns_records/%s", this.getZoneId(), this.getRecordId());
     final String payload = String.format("{\"type\":\"A\",\"name\":\"%s\",\"content\":\"%s\",\"ttl\":%d,\"proxied\":%s}",
       this.getDomain(),
