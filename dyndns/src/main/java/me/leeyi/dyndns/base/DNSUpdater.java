@@ -1,9 +1,9 @@
 package me.leeyi.dyndns.base;
 
 import java.net.InetAddress;
-import java.util.List;
 import java.util.logging.Logger;
 
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -11,6 +11,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import com.mojang.brigadier.context.CommandContext;
+
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import me.leeyi.dyndns.InvalidConfigException;
 
 public abstract class DNSUpdater {
   public DNSUpdater(
@@ -64,7 +69,7 @@ public abstract class DNSUpdater {
     final InetAddress ip = getCurrentIp();
     if (ip == null) return false;
     if (ip.equals(this.lastRetrievedIp)) {
-      this.logger.info(String.format("Last retrieved IP was also %s, not updating...", ip));
+      this.logger.info(String.format("Last retrieved IP was also %s, not updating...", ip.getHostAddress()));
       return true;
     }
 
@@ -83,7 +88,7 @@ public abstract class DNSUpdater {
     return true;
   }
 
-  public void startTask() {
+  public boolean startTask() {
     final BukkitRunnable runnable = new BukkitRunnable() {
       @Override
       public void run() { updateDns(); }
@@ -92,9 +97,13 @@ public abstract class DNSUpdater {
     if (interval != -1) {
       if (isCancelled()) {
         this.updateTask = runnable.runTaskTimerAsynchronously(this.parentPlugin, 0L, interval * 20);
+        return true;
+      } else {
+        return false;
       }
     } else {
       runnable.runTask(this.parentPlugin);
+      return true;
     }
   }
 
@@ -105,8 +114,73 @@ public abstract class DNSUpdater {
     return config;
   }
 
-  public List<String> fromConfigurationSection(final ConfigurationSection config) {
-    this.setInterval(config.getInt("interval", -1));
-    return List.of();
+  public final int stopCommandHandler(final CommandContext<CommandSourceStack> ctx) {
+    final CommandSender sender = ctx.getSource().getSender();
+
+    if (cancelTask()) {
+      sender.sendPlainMessage(String.format("Automatic DNS updates stopped for %s.", this.getName()));
+    } else {
+      sender.sendPlainMessage(String.format("No Automatic DNS task running for %s.", this.getName()));
+    }
+    return 1;
+  }
+
+  public final int startCommandHandler(final CommandContext<CommandSourceStack> ctx) {
+    final CommandSender sender = ctx.getSource().getSender();
+
+    if (startTask()) {
+      sender.sendPlainMessage(String.format("Updater task for %s was started.", this.getName()));
+    } else {
+      sender.sendPlainMessage(String.format("Updater task for %s is already running.", this.getName()));
+    }
+
+    return 1;
+  }
+
+  public final int lastCommandHandler(final CommandContext<CommandSourceStack> ctx) {
+    final CommandSender sender = ctx.getSource().getSender();
+
+    if (this.lastRetrievedIp == null) {
+      sender.sendPlainMessage(String.format("%s has not yet retrieved IP address from %s", this.getName(), this.getLastRetrievedIp()));
+    } else {
+      sender.sendPlainMessage(String.format("Last retrieved IP address for %s was %s", this.getName(), this.lastRetrievedIp));
+    }
+
+    return 1;
+  }
+
+  // public final int reloadCommandHandler(final CommandContext<CommandSourceStack> ctx) {
+  //   final List<String> configLoadErrors = loadConfig();
+  //   final CommandSender sender = ctx.getSource().getSender();
+    
+  //   if (configLoadErrors.size() > 0) {
+  //     sender.sendPlainMessage("Config failed to load");
+  //     configLoadErrors.forEach(sender::sendPlainMessage);
+  //   } else {
+  //     startUpdateTask(runnable);
+  //     sender.sendPlainMessage("Config reloaded.");
+  //   }
+  //   return 1;
+  // }
+
+  public final int statusCommandHandler(final CommandContext<CommandSourceStack> ctx) {
+    final CommandSender sender = ctx.getSource().getSender();
+
+    if (updateTask != null && !updateTask.isCancelled()) {
+      sender.sendPlainMessage(String.format("Automatic DNS task is running for %s", this.getName()));
+    } else {
+      sender.sendPlainMessage(String.format("No automatic DNS task running for %s", this.getName()));
+    }
+
+    return 1;
+  }
+
+  protected final @NotNull String getStringFromSection(final String path, final ConfigurationSection config) throws InvalidConfigException {
+    final String rawValue = config.getString(path);
+    if (rawValue == null) {
+      throw new InvalidConfigException(this, String.format("No value provided for %s", path));
+    }
+
+    return rawValue;
   }
 }

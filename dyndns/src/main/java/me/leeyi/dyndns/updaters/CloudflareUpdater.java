@@ -6,8 +6,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
-import java.util.function.Function;
 import java.util.logging.Logger;
 
 import org.bukkit.configuration.ConfigurationSection;
@@ -15,6 +13,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import me.leeyi.dyndns.InvalidConfigException;
 import me.leeyi.dyndns.base.HttpUpdater;
 
 /**
@@ -24,19 +23,16 @@ public class CloudflareUpdater extends HttpUpdater {
   public CloudflareUpdater(
     final @NotNull Logger logger,
     final @NotNull JavaPlugin parent,
-    final URI ipApiAddress,
-    final @NotNull String domain,
-    final @NotNull String zoneId,
-    final @NotNull String recordId,
-    final @NotNull String apiToken,
-    final int ttl
-  ) {
-    super(logger, parent, ipApiAddress);
-    this.domain = domain;
-    this.zoneId = zoneId;
-    this.recordId = recordId;
-    this.apiToken = apiToken;
-    this.ttl = ttl;
+    final @Nullable ConfigurationSection config
+  ) throws InvalidConfigException {
+    super(logger, parent, config);
+
+    this.domain = this.getStringFromSection("domain", config);
+    this.zoneId = this.getStringFromSection("zone_id", config);
+    this.recordId = this.getStringFromSection("record_id", config);
+    this.apiToken = this.getStringFromSection("api_token", config);
+    this.ttl = config.getInt("ttl", 1);
+    this.proxied = config.getBoolean("proxied");
   }
 
   @Override
@@ -45,40 +41,40 @@ public class CloudflareUpdater extends HttpUpdater {
   /**
    * Domain to be updated, i.e `domain.toupdate.com`
    */
-  private @NotNull String domain;
+  private String domain;
 
   public void setDomain(final @NotNull String domain) {
     this.domain = domain;
   }
 
-  public @NotNull String getDomain() {
+  public String getDomain() {
     return domain;
   }
 
-  private @NotNull String zoneId;
+  private String zoneId;
   public void setZoneId(final @NotNull String zoneId) {
     this.zoneId = zoneId;
   }
 
-  public @NotNull String getZoneId() {
+  public String getZoneId() {
     return zoneId;
   }
 
-  private @NotNull String recordId;
+  private String recordId;
   public void setRecordId(final @NotNull String recordId) {
     this.recordId = recordId;
   }
 
-  public @NotNull String getRecordId() {
+  public String getRecordId() {
     return recordId;
   }
 
-  private @NotNull String apiToken;
+  private String apiToken;
   public void setApiToken(final @NotNull String apiToken) {
     this.apiToken = apiToken;
   }
 
-  public @NotNull String getApiToken() {
+  public String getApiToken() {
     return apiToken;
   }
 
@@ -124,16 +120,16 @@ public class CloudflareUpdater extends HttpUpdater {
 
       final HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
       if (resp.statusCode() == 200) {
-        getLogger().info(String.format("Successfully updated %s to %s", this.getDomain(), ip));
+        getLogger().info(String.format("Successfully updated %s to %s", this.getDomain(), ip.getHostAddress()));
         return true;
       }
 
       getLogger().severe(String.format("Cloudflare API returned HTTP %d", resp.statusCode()));
-    } catch (IOException e) {
+    } catch (IOException _) {
       getLogger().severe("Update to Cloudflare failed with IOException");
-    } catch (InterruptedException e) {
+    } catch (InterruptedException _) {
       getLogger().severe("Update to Cloudflare failed with InterruptedException");
-    } catch (URISyntaxException e) {
+    } catch (URISyntaxException _) {
       getLogger().severe(String.format("Failed to format zone_id and record_id into a proper URI: %s", rawUri));
     } catch (Exception e) {
       getLogger().severe("Update to Cloudflare failed " + e.getMessage());
@@ -153,29 +149,5 @@ public class CloudflareUpdater extends HttpUpdater {
     config.set("api_token", this.getApiToken());
 
     return config;
-  }
-
-  @Override
-  public List<String> fromConfigurationSection(final ConfigurationSection config) {
-    final List<String> errors = super.fromConfigurationSection(config);
-
-    final Function<String, @Nullable String> stringHandler = option -> {
-      final String value = config.getString(option);
-      if (value == null) {
-        errors.add(String.format("No %s defined for %s!", option, this.getName()));
-        return null;
-      }
-      
-      return value;
-    };
-
-    this.setDomain(stringHandler.apply("domain"));
-    this.setRecordId(stringHandler.apply("record_id"));
-    this.setZoneId(stringHandler.apply("zone_id"));
-    this.setApiToken(stringHandler.apply("api_token"));
-    this.setProxied(config.getBoolean("proxied"));
-    this.setTtl(config.getInt("ttl"));
-
-    return errors;
   }
 }
