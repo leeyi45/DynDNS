@@ -1,15 +1,14 @@
-zone_id:
-record_id:
-
-# Domain to update
-domain:
-
-# Cloudflare API Token
-api_token:
-
 # API to contact for IP Address
 api_address: "https://api.ipify.org"
 
-proxied: true
+cloudflare:
+  zone_id:
+  record_id:
 
-ttl: 3000
+  # Domain to update, e.g. mc.server.com
+  domain:
+
+  # Cloudflare API Token
+  api_token:
+  proxied: true
+  ttl: 3000

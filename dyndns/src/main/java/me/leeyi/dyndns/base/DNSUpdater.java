@@ -4,7 +4,6 @@ import java.net.InetAddress;
 import java.util.logging.Logger;
 
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,13 +20,7 @@ public abstract class DNSUpdater {
   }
 
   public abstract @NotNull String getName();
-
-  private int interval;
-  public int getInterval() { return interval; }
-  public DNSUpdater setInterval(final int interval) {
-    this.interval = interval;
-    return this;
-  }
+  public abstract boolean updateDns(final InetAddress ip);
 
   private @Nullable InetAddress lastRetrievedIp = null;
   public @Nullable InetAddress getLastRetrievedIp() { return this.lastRetrievedIp; }
@@ -37,17 +30,11 @@ public abstract class DNSUpdater {
   private final @NotNull Logger logger;
   public final @NotNull Logger getLogger() { return this.logger; }
 
-  public abstract boolean updateDns(final InetAddress ip);
-
   private boolean enabled;
   public boolean isEnabled() { return this.enabled; }
-  public void setEnabled(final boolean value) { this.enabled = value; }
-
-  public ConfigurationSection toConfigurationSection() {
-    final var config = new MemoryConfiguration();
-    config.set("interval", this.getInterval());
-
-    return config;
+  public DNSUpdater setEnabled(final boolean value) {
+    this.enabled = value;
+    return this;
   }
 
   protected final @NotNull String getStringFromSection(final String path, final ConfigurationSection config) throws InvalidConfigException {

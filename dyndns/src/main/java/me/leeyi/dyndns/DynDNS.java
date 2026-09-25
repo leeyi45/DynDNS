@@ -47,18 +47,19 @@ public class DynDNS extends JavaPlugin {
 
     if (!updaterCreators.containsKey(protocol)) {
       sender.sendPlainMessage(String.format("No such protocol %s", protocol));
+      return 1;
     }
 
     final ConfigurationSection configSection = getConfig().getConfigurationSection(protocol);
 
     if (configSection == null) {
-      sender.sendPlainMessage(String.format("No config for %s, skipping...", protocol));
+      sender.sendPlainMessage(String.format("No config for %s, skipping reload", protocol));
     } else {
       try {
         final UpdaterCreator creator = updaterCreators.get(protocol);
         updaters.put(protocol, creator.create(getLogger(), this, configSection));
       } catch (InvalidConfigException e) {
-
+        sender.sendPlainMessage(String.format("Invalid config for %s, skipping reload", protocol));
       }
     }
 
@@ -73,18 +74,20 @@ public class DynDNS extends JavaPlugin {
       final ConfigurationSection configSection = config.getConfigurationSection(protocol);
 
       if (configSection == null) {
-        this.logger.warning(String.format("No config for %s, skipping...", protocol));
+        logger.warning(String.format("No config for %s, skipping...", protocol));
       } else {
         try {
-          updaters.put(kv.getKey(), kv.getValue().create(getLogger(), this, configSection));
+          final DNSUpdater updater = kv.getValue().create(getLogger(), this, configSection);
+          updater.setEnabled(true);
+          updaters.put(kv.getKey(), updater);
         } catch (InvalidConfigException e) {
-          this.logger.severe(String.format("Invalid config for %s: %s", protocol, e.getMessage()));
+          logger.severe(String.format("Invalid config for \"%s\": %s", protocol, e.getMessage()));
         }
       }
     }
   }
 
-  private LiteralArgumentBuilder<CommandSourceStack> createProtocolCommand(
+  private final LiteralArgumentBuilder<CommandSourceStack> createProtocolCommand(
     final String name,
     final BiFunction<DNSUpdater, CommandSender, Integer> handler
   ) {
@@ -143,6 +146,9 @@ public class DynDNS extends JavaPlugin {
         if (lastRetrievedIp != null && lastRetrievedIp.equals(newIp)) {
           logger.info(String.format("New IP %s is the same as last received IP, not proceeding with updates.", newIp.getHostAddress()));
           return;
+        } else {
+          logger.info(String.format("IP retrieved from %s: %s", this.ipApiAddress, newIp.getHostAddress()));
+          this.lastRetrievedIp = newIp;
         }
 
         for (DNSUpdater updater : updaters.values()) {
@@ -157,7 +163,7 @@ public class DynDNS extends JavaPlugin {
     } catch (IOException e) {
       logger.severe(String.format("HTTP request to %s failed with IOException: %s", this.ipApiAddress, e.getMessage()));
     } catch (InterruptedException e) {
-      logger.severe(String.format("HTTP request to %s was cancelled.", this.ipApiAddress));
+      logger.severe("HTTP request to %s was cancelled.");
     }
   }
 
@@ -199,9 +205,9 @@ public class DynDNS extends JavaPlugin {
               final CommandSender sender = ctx.getSource().getSender();
              
               if (lastRetrievedIp != null) {
-                sender.sendPlainMessage(String.format("Last IP retrieved from %s is %s", this.ipApiAddress, this.lastRetrievedIp));
+                sender.sendPlainMessage(String.format("Last IP retrieved from %s was %s", this.ipApiAddress, this.lastRetrievedIp.getHostAddress()));
               } else {
-                sender.sendPlainMessage("No last retrieved IP");
+                sender.sendPlainMessage("No last retrieved IP.");
               }
               return 1;
             })
@@ -228,9 +234,9 @@ public class DynDNS extends JavaPlugin {
 
     final FileConfiguration config = getConfig();
 
-    final int rawUpdateInterval = config.getInt("interval", 100);
+    final int rawUpdateInterval = config.getInt("interval", 1000);
     if (rawUpdateInterval < -1) {
-      logger.severe(String.format("Invalid value for interval %d: Must be greater than -1", rawUpdateInterval));
+      logger.severe(String.format("Invalid value for interval \"%d\": Must be greater than -1", rawUpdateInterval));
       return;
     } else {
       this.updateInterval = rawUpdateInterval;
@@ -244,7 +250,7 @@ public class DynDNS extends JavaPlugin {
     try {
       this.ipApiAddress = new URI(rawIpApi);
     } catch (URISyntaxException _) {
-      logger.severe(String.format("Invalid value for api_address: %s", rawIpApi));
+      logger.severe(String.format("Invalid URI for api_address: %s", rawIpApi));
     }
 
     if (this.ipApiAddress != null) {

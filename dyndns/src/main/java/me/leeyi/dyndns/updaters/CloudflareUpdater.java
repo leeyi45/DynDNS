@@ -1,6 +1,7 @@
 package me.leeyi.dyndns.updaters;
 
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -105,7 +106,8 @@ public class CloudflareUpdater extends DNSUpdater {
   @Override
   public boolean updateDns(final InetAddress ip) {
     final String rawUri = String.format("https://api.cloudflare.com/client/v4/zones/%s/dns_records/%s", this.getZoneId(), this.getRecordId());
-    final String payload = String.format("{\"type\":\"A\",\"name\":\"%s\",\"content\":\"%s\",\"ttl\":%d,\"proxied\":%s}",
+    final String payload = String.format("{\"type\":\"%s\",\"name\":\"%s\",\"content\":\"%s\",\"ttl\":%d,\"proxied\":%s}",
+      ip instanceof Inet4Address ? "A" : "AAAA",
       this.getDomain(),
       ip.getHostAddress(),
       this.getTtl(),
@@ -138,19 +140,5 @@ public class CloudflareUpdater extends DNSUpdater {
       getLogger().severe("Update to Cloudflare failed " + e.getMessage());
     }
     return false;
-  }
-
-  @Override 
-  public ConfigurationSection toConfigurationSection() {
-    final var config = super.toConfigurationSection();
-
-    config.set("domain", this.getDomain());
-    config.set("record_id", this.getRecordId());
-    config.set("zone_id", this.getZoneId());
-    config.set("ttl", this.getTtl());
-    config.set("proxied", this.isProxied());
-    config.set("api_token", this.getApiToken());
-
-    return config;
   }
 }
