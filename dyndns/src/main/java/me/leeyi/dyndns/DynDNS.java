@@ -22,6 +22,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -88,7 +89,7 @@ public class DynDNS extends JavaPlugin {
   }
 
   private final LiteralArgumentBuilder<CommandSourceStack> createProtocolCommand(
-    final String name,
+    final @NotNull String name,
     final BiFunction<DNSUpdater, CommandSender, Integer> handler
   ) {
     return Commands.literal(name)
@@ -97,8 +98,10 @@ public class DynDNS extends JavaPlugin {
         final String protocol = ctx.getArgument("protocol", String.class);
         final CommandSender sender = ctx.getSource().getSender();
 
-        if (!updaters.containsKey(protocol)) {
+        if (!updaterCreators.containsKey(protocol)) {
           sender.sendPlainMessage(String.format("Unknown protocol \"%s\".", protocol));
+        } else if (!updaters.containsKey(protocol)) {
+          sender.sendPlainMessage(String.format("Protocol \"%s\" was not initialized.", protocol));
         } else {
           final DNSUpdater updater = updaters.get(protocol);
           return handler.apply(updater, sender);
@@ -143,7 +146,7 @@ public class DynDNS extends JavaPlugin {
       try {
         final InetAddress newIp = InetAddress.ofLiteral(resp.body().strip());
         
-        if (lastRetrievedIp != null && lastRetrievedIp.equals(newIp)) {
+        if (this.lastRetrievedIp != null && this.lastRetrievedIp.equals(newIp)) {
           logger.info(String.format("New IP %s is the same as last received IP, not proceeding with updates.", newIp.getHostAddress()));
           return;
         } else {
@@ -245,12 +248,14 @@ public class DynDNS extends JavaPlugin {
     final String rawIpApi = config.getString("api_address");
     if (rawIpApi == null) {
       logger.severe("No IP api address provided!");
+      return;
     }
 
     try {
       this.ipApiAddress = new URI(rawIpApi);
     } catch (URISyntaxException _) {
       logger.severe(String.format("Invalid URI for api_address: %s", rawIpApi));
+      return;
     }
 
     if (this.ipApiAddress != null) {
