@@ -129,7 +129,8 @@ public class CloudflareUpdater extends DNSUpdater {
         return true;
       }
 
-      getLogger().severe(String.format("Cloudflare API returned HTTP %d", resp.statusCode()));
+      final String message = resp.body();
+      getLogger().severe(String.format("Cloudflare API returned HTTP %d: %s", resp.statusCode(), message));
     } catch (IOException _) {
       getLogger().severe("Update to Cloudflare failed with IOException");
     } catch (InterruptedException _) {

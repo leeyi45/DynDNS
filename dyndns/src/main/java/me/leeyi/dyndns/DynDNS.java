@@ -245,11 +245,7 @@ public class DynDNS extends JavaPlugin {
       this.updateInterval = rawUpdateInterval;
     }
 
-    final String rawIpApi = config.getString("api_address");
-    if (rawIpApi == null) {
-      logger.severe("No IP api address provided!");
-      return;
-    }
+    final @NotNull String rawIpApi = config.getString("api_address", "https://api.ipify.org");
 
     try {
       this.ipApiAddress = new URI(rawIpApi);
@@ -259,7 +255,7 @@ public class DynDNS extends JavaPlugin {
     }
 
     if (this.ipApiAddress != null) {
-      if (updateInterval == -1) {
+      if (updateInterval != -1) {
         updateTask = executorService.scheduleAtFixedRate(this::updateDns, 0L, updateInterval, TimeUnit.SECONDS);
       } else {
         executorService.submit(this::updateDns);
