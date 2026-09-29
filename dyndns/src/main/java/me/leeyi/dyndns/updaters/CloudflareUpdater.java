@@ -1,26 +1,24 @@
 package me.leeyi.dyndns.updaters;
 
-import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.logging.Logger;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import me.leeyi.dyndns.InvalidConfigException;
-import me.leeyi.dyndns.base.DNSUpdater;
+import me.leeyi.dyndns.base.HttpUpdater;
 
 /**
  * Concrete implementation for Cloudflare DNS
  */
-public class CloudflareUpdater extends DNSUpdater {
+public class CloudflareUpdater extends HttpUpdater {
   public CloudflareUpdater(
     final @NotNull Logger logger,
     final @NotNull JavaPlugin parent,
@@ -34,53 +32,42 @@ public class CloudflareUpdater extends DNSUpdater {
     this.proxied = config.getBoolean("proxied");
   }
 
-  private final HttpClient httpClient = HttpClient.newHttpClient();
-
   @Override
   public @NotNull String getName() { return "cloudflare"; }
 
-
   private String zoneId;
-  public void setZoneId(final @NotNull String zoneId) {
+  public CloudflareUpdater setZoneId(final @NotNull String zoneId) {
     this.zoneId = zoneId;
+    return this;
   }
-
-  public String getZoneId() {
-    return zoneId;
-  }
+  public String getZoneId() { return zoneId; }
 
   private String recordId;
-  public void setRecordId(final @NotNull String recordId) {
+  public CloudflareUpdater setRecordId(final @NotNull String recordId) {
     this.recordId = recordId;
+    return this;
   }
-
-  public String getRecordId() {
-    return recordId;
-  }
+  public String getRecordId() { return recordId; }
 
   private String apiToken;
-  public void setApiToken(final @NotNull String apiToken) {
+  public CloudflareUpdater setApiToken(final @NotNull String apiToken) {
     this.apiToken = apiToken;
+    return this;
   }
-
-  public String getApiToken() {
-    return apiToken;
-  }
+  public String getApiToken() { return apiToken; }
 
   /**
    * Set to `true` to tell Cloudflare to activate proxying
    */
   private boolean proxied;
-  public boolean isProxied() {
-    return proxied;
-  }
-
-  public void setProxied(final boolean proxied) {
+  public boolean isProxied() { return proxied; }
+  public CloudflareUpdater setProxied(final boolean proxied) {
     this.proxied = proxied;
+    return this;
   }
 
   @Override
-  public boolean updateDns(final InetAddress ip) {
+  protected @Nullable HttpRequest getHttpRequest(final InetAddress ip) {
     final String rawUri = String.format("https://api.cloudflare.com/client/v4/zones/%s/dns_records/%s", this.getZoneId(), this.getRecordId());
     final String payload = String.format("{\"type\":\"%s\",\"name\":\"%s\",\"content\":\"%s\",\"ttl\":%d,\"proxied\":%s}",
       ip instanceof Inet4Address ? "A" : "AAAA",
@@ -93,29 +80,14 @@ public class CloudflareUpdater extends DNSUpdater {
     try {
       final URI requestUri = new URI(rawUri);
 
-      final HttpRequest req = HttpRequest.newBuilder(requestUri)
+      return HttpRequest.newBuilder(requestUri)
         .PUT(HttpRequest.BodyPublishers.ofString(payload))
         .header("Authorization", "Bearer " + this.getApiToken())
         .header("Content-Type", "application/json")    
         .build();
-
-      final HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
-      if (resp.statusCode() == 200) {
-        getLogger().info(String.format("Successfully updated %s to %s", this.getDomain(), ip.getHostAddress()));
-        return true;
-      }
-
-      final String message = resp.body();
-      getLogger().severe(String.format("Cloudflare API returned HTTP %d: %s", resp.statusCode(), message));
-    } catch (IOException _) {
-      getLogger().severe("Update to Cloudflare failed with IOException");
-    } catch (InterruptedException _) {
-      getLogger().severe("Update to Cloudflare failed with InterruptedException");
-    } catch (URISyntaxException _) {
+    } catch (URISyntaxException e) {
       getLogger().severe(String.format("Failed to format zone_id and record_id into a proper URI: %s", rawUri));
-    } catch (Exception e) {
-      getLogger().severe("Update to Cloudflare failed " + e.getMessage());
-    }
-    return false;
+      return null;
+    } 
   }
 }

@@ -1,4 +1,4 @@
-package me.leeyi.dyndns.updaters;
+package me.leeyi.dyndns.base;
 
 import java.util.logging.Logger;
 
@@ -7,7 +7,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import me.leeyi.dyndns.InvalidConfigException;
-import me.leeyi.dyndns.base.DNSUpdater;
 
 @FunctionalInterface
 public interface UpdaterCreator {

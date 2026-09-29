@@ -31,8 +31,8 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import me.leeyi.dyndns.base.DNSUpdater;
+import me.leeyi.dyndns.base.UpdaterCreator;
 import me.leeyi.dyndns.updaters.CloudflareUpdater;
-import me.leeyi.dyndns.updaters.UpdaterCreator;
 
 public class DynDNS extends JavaPlugin {
   private final Map<String, UpdaterCreator> updaterCreators = Map.of(
