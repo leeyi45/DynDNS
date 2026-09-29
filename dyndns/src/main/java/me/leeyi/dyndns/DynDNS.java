@@ -130,7 +130,10 @@ public class DynDNS extends JavaPlugin {
   private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
   private @Nullable ScheduledFuture<?> updateTask;
 
-  private final void updateDns() {
+  /**
+   * The main update loop that triggers regularly if scheduled or as a once off.
+   */
+  private final void retrieveIpupdateDns() {
     try {
       final HttpRequest req = HttpRequest.newBuilder(this.ipApiAddress)
         .GET()
@@ -256,9 +259,9 @@ public class DynDNS extends JavaPlugin {
 
     if (this.ipApiAddress != null) {
       if (updateInterval != -1) {
-        updateTask = executorService.scheduleAtFixedRate(this::updateDns, 0L, updateInterval, TimeUnit.SECONDS);
+        updateTask = executorService.scheduleAtFixedRate(this::retrieveIpupdateDns, 0L, updateInterval, TimeUnit.SECONDS);
       } else {
-        executorService.submit(this::updateDns);
+        executorService.submit(this::retrieveIpupdateDns);
       }
     }
   }

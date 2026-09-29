@@ -28,6 +28,8 @@ java {
   }
 }
 
+version = "1.0.0"
+
 tasks.jar {
   destinationDirectory.set(file("$rootDir/dyndns/dist"))
 }

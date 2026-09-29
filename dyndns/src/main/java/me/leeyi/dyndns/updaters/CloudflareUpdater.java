@@ -13,7 +13,6 @@ import java.util.logging.Logger;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import me.leeyi.dyndns.InvalidConfigException;
 import me.leeyi.dyndns.base.DNSUpdater;
@@ -25,15 +24,13 @@ public class CloudflareUpdater extends DNSUpdater {
   public CloudflareUpdater(
     final @NotNull Logger logger,
     final @NotNull JavaPlugin parent,
-    final @Nullable ConfigurationSection config
+    final @NotNull ConfigurationSection config
   ) throws InvalidConfigException {
-    super(logger, parent);
+    super(logger, parent, config);
 
-    this.domain = this.getStringFromSection("domain", config);
     this.zoneId = this.getStringFromSection("zone_id", config);
     this.recordId = this.getStringFromSection("record_id", config);
     this.apiToken = this.getStringFromSection("api_token", config);
-    this.ttl = config.getInt("ttl", 1);
     this.proxied = config.getBoolean("proxied");
   }
 
@@ -42,18 +39,6 @@ public class CloudflareUpdater extends DNSUpdater {
   @Override
   public @NotNull String getName() { return "cloudflare"; }
 
-  /**
-   * Domain to be updated, i.e `domain.toupdate.com`
-   */
-  private String domain;
-
-  public void setDomain(final @NotNull String domain) {
-    this.domain = domain;
-  }
-
-  public String getDomain() {
-    return domain;
-  }
 
   private String zoneId;
   public void setZoneId(final @NotNull String zoneId) {
@@ -80,15 +65,6 @@ public class CloudflareUpdater extends DNSUpdater {
 
   public String getApiToken() {
     return apiToken;
-  }
-
-  private int ttl;
-  public int getTtl() {
-    return ttl;
-  }
-
-  public void setTtl(final int ttl) {
-    this.ttl = ttl;
   }
 
   /**
