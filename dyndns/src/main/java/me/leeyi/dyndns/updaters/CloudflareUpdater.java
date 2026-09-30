@@ -5,7 +5,6 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpRequest;
-import java.util.logging.Logger;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -20,11 +19,10 @@ import me.leeyi.dyndns.base.HttpUpdater;
  */
 public class CloudflareUpdater extends HttpUpdater {
   public CloudflareUpdater(
-    final @NotNull Logger logger,
     final @NotNull JavaPlugin parent,
     final @NotNull ConfigurationSection config
   ) throws InvalidConfigException {
-    super(logger, parent, config);
+    super(parent, config);
 
     this.zoneId = this.getStringFromSection("zone_id", config);
     this.recordId = this.getStringFromSection("record_id", config);

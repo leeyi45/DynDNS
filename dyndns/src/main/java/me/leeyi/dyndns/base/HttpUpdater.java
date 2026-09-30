@@ -6,7 +6,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.logging.Logger;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -17,11 +16,10 @@ import me.leeyi.dyndns.InvalidConfigException;
 
 public abstract class HttpUpdater extends DNSUpdater {
   public HttpUpdater(
-    final @NotNull Logger logger,
     final @NotNull JavaPlugin parent,
     final @NotNull ConfigurationSection config
   ) throws InvalidConfigException {
-    super(logger, parent, config);
+    super(parent, config);
   }
 
   protected final HttpClient httpClient = HttpClient.newHttpClient();

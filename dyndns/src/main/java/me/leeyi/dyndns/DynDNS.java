@@ -51,14 +51,14 @@ public class DynDNS extends JavaPlugin {
       return 1;
     }
 
-    final ConfigurationSection configSection = getConfig().getConfigurationSection(protocol);
+    final @Nullable ConfigurationSection configSection = getConfig().getConfigurationSection(protocol);
 
     if (configSection == null) {
       sender.sendPlainMessage(String.format("No config for %s, skipping reload", protocol));
     } else {
       try {
         final UpdaterCreator creator = updaterCreators.get(protocol);
-        updaters.put(protocol, creator.create(getLogger(), this, configSection));
+        updaters.put(protocol, creator.create(this, configSection));
       } catch (InvalidConfigException e) {
         sender.sendPlainMessage(String.format("Invalid config for %s, skipping reload", protocol));
       }
@@ -78,7 +78,7 @@ public class DynDNS extends JavaPlugin {
         logger.warning(String.format("No config for %s, skipping...", protocol));
       } else {
         try {
-          final DNSUpdater updater = kv.getValue().create(getLogger(), this, configSection);
+          final DNSUpdater updater = kv.getValue().create(this, configSection);
           updater.setEnabled(true);
           updaters.put(kv.getKey(), updater);
         } catch (InvalidConfigException e) {
