@@ -21,8 +21,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -47,7 +47,7 @@ public class DynDNS extends JavaPlugin {
     final CommandSender sender = ctx.getSource().getSender();
 
     if (!updaterCreators.containsKey(protocol)) {
-      sender.sendPlainMessage(String.format("No such protocol %s", protocol));
+      sender.sendPlainMessage(String.format("No such protocol \"%s\"", protocol));
       return 1;
     }
 
@@ -111,11 +111,6 @@ public class DynDNS extends JavaPlugin {
   }
 
   /**
-   * Address of the IP API to request the IP address from.
-   */
-  private URI ipApiAddress;
-
-  /**
    * Last IP Address that was retrieved from the IP API.
    */
   private @Nullable InetAddress lastRetrievedIp = null;
@@ -133,16 +128,16 @@ public class DynDNS extends JavaPlugin {
   /**
    * The main update loop that triggers regularly if scheduled or as a once off.
    */
-  private final void retrieveIpupdateDns() {
+  private final void retrieveIpAndUpdateDns(final @NotNull URI ipApiAddress) {
     try {
-      final HttpRequest req = HttpRequest.newBuilder(this.ipApiAddress)
+      final HttpRequest req = HttpRequest.newBuilder(ipApiAddress)
         .GET()
         .build();
 
       final HttpResponse<String> resp = httpClient.send(req, BodyHandlers.ofString());
 
       if (resp.statusCode() != 200) {
-        logger.severe(String.format("Failed to retrieve IP from %s: HTTP %d", this.ipApiAddress, resp.statusCode()));
+        logger.severe(String.format("Failed to retrieve IP from %s: HTTP %d", ipApiAddress, resp.statusCode()));
         return;
       }
 
@@ -153,7 +148,7 @@ public class DynDNS extends JavaPlugin {
           logger.info(String.format("New IP %s is the same as last received IP, not proceeding with updates.", newIp.getHostAddress()));
           return;
         } else {
-          logger.info(String.format("IP retrieved from %s: %s", this.ipApiAddress, newIp.getHostAddress()));
+          logger.info(String.format("IP retrieved from %s: %s", ipApiAddress, newIp.getHostAddress()));
           this.lastRetrievedIp = newIp;
         }
 
@@ -163,11 +158,11 @@ public class DynDNS extends JavaPlugin {
           }
         }
       } catch (IllegalArgumentException _) {
-        logger.severe(String.format("%s did not return a valid IP address", this.ipApiAddress));
+        logger.severe(String.format("%s did not return a valid IP address", ipApiAddress));
         return;
       }
     } catch (IOException e) {
-      logger.severe(String.format("HTTP request to %s failed with IOException: %s", this.ipApiAddress, e.getMessage()));
+      logger.severe(String.format("HTTP request to %s failed with IOException: %s", ipApiAddress, e.getMessage()));
     } catch (InterruptedException e) {
       logger.severe("HTTP request to %s was cancelled.");
     }
@@ -211,7 +206,7 @@ public class DynDNS extends JavaPlugin {
               final CommandSender sender = ctx.getSource().getSender();
              
               if (lastRetrievedIp != null) {
-                sender.sendPlainMessage(String.format("Last IP retrieved from %s was %s", this.ipApiAddress, this.lastRetrievedIp.getHostAddress()));
+                sender.sendPlainMessage(String.format("Last IP retrieved was %s", this.lastRetrievedIp.getHostAddress()));
               } else {
                 sender.sendPlainMessage("No last retrieved IP.");
               }
@@ -250,18 +245,19 @@ public class DynDNS extends JavaPlugin {
 
     final @NotNull String rawIpApi = config.getString("api_address", "https://api.ipify.org");
 
+    URI ipApiAddress;
     try {
-      this.ipApiAddress = new URI(rawIpApi);
+      ipApiAddress = new URI(rawIpApi);
     } catch (URISyntaxException _) {
       logger.severe(String.format("Invalid URI for api_address: %s", rawIpApi));
       return;
     }
 
-    if (this.ipApiAddress != null) {
+    if (ipApiAddress != null) {
       if (updateInterval != -1) {
-        updateTask = executorService.scheduleAtFixedRate(this::retrieveIpupdateDns, 0L, updateInterval, TimeUnit.SECONDS);
+        updateTask = executorService.scheduleAtFixedRate(() -> { this.retrieveIpAndUpdateDns(ipApiAddress); }, 0L, updateInterval, TimeUnit.SECONDS);
       } else {
-        executorService.submit(this::retrieveIpupdateDns);
+        executorService.submit(() -> { this.retrieveIpAndUpdateDns(ipApiAddress); });
       }
     }
   }

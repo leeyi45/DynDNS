@@ -33,26 +33,26 @@ public class CloudflareUpdater extends HttpUpdater {
   @Override
   public @NotNull String getName() { return "cloudflare"; }
 
-  private String zoneId;
+  private @NotNull String zoneId;
   public CloudflareUpdater setZoneId(final @NotNull String zoneId) {
     this.zoneId = zoneId;
     return this;
   }
-  public String getZoneId() { return zoneId; }
+  public @NotNull String getZoneId() { return zoneId; }
 
-  private String recordId;
+  private @NotNull String recordId;
   public CloudflareUpdater setRecordId(final @NotNull String recordId) {
     this.recordId = recordId;
     return this;
   }
-  public String getRecordId() { return recordId; }
+  public @NotNull String getRecordId() { return recordId; }
 
-  private String apiToken;
+  private @NotNull String apiToken;
   public CloudflareUpdater setApiToken(final @NotNull String apiToken) {
     this.apiToken = apiToken;
     return this;
   }
-  public String getApiToken() { return apiToken; }
+  public @NotNull String getApiToken() { return apiToken; }
 
   /**
    * Set to `true` to tell Cloudflare to activate proxying

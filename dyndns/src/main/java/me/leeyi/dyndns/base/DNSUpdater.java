@@ -22,9 +22,13 @@ public abstract class DNSUpdater {
   }
 
   public abstract @NotNull String getName();
+
+  /**
+   * Function that is called to actually update the DNS record
+   */
   public abstract boolean updateDns(final InetAddress ip);
 
-  protected final @NotNull JavaPlugin parentPlugin;
+  private final @NotNull JavaPlugin parentPlugin;
   public final @NotNull Logger getLogger() { return parentPlugin.getLogger(); }
 
   private boolean enabled;
@@ -37,14 +41,16 @@ public abstract class DNSUpdater {
   /**
    * Domain to be updated, i.e `domain.toupdate.com`
    */
-  private String domain;
-
+  private @NotNull String domain;
   public DNSUpdater setDomain(final @NotNull String domain) {
     this.domain = domain;
     return this;
   }
-  public String getDomain() { return domain; }
+  public @NotNull String getDomain() { return domain; }
 
+  /**
+   * DNS Time To Live value (in seconds)
+   */
   private int ttl;
   public int getTtl() {
     return ttl;
@@ -54,7 +60,7 @@ public abstract class DNSUpdater {
     return this;
   }
 
-  protected final @NotNull String getStringFromSection(final String path, final @NotNull ConfigurationSection config) throws InvalidConfigException {
+  protected final @NotNull String getStringFromSection(final @NotNull String path, final @NotNull ConfigurationSection config) throws InvalidConfigException {
     final String rawValue = config.getString(path);
     if (rawValue == null) {
       throw new InvalidConfigException(this, String.format("No value provided for %s", path));
