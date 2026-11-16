@@ -1,7 +1,7 @@
 name: DynamicDNS
-version: 1.0.0
+version: '${version}'
 main: me.leeyi.dyndns.DynDNS
-api-version: '26.2'
+api-version: '${apiVersion}'
 default-permission: op
 commands:
   dyndns:

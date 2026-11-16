@@ -1,3 +1,6 @@
+val pluginVersion = project.version.toString()
+val apiVersion = providers.gradleProperty("apiVersion").get()
+
 plugins {
   java
 }
@@ -17,7 +20,7 @@ dependencies {
 
   // testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-  compileOnly("io.papermc.paper:paper-api:26.2.build.+")
+  compileOnly("io.papermc.paper:paper-api:${apiVersion}.build.+")
   implementation(fileTree("src") { include("*.jar") })
 }
 
@@ -28,8 +31,18 @@ java {
   }
 }
 
-version = "1.0.0"
+tasks.processResources {
+  inputs.property("version", pluginVersion)
+
+  filesMatching("plugin.yml") {
+    expand(
+      "version" to pluginVersion,
+      "apiVersion" to apiVersion
+    )
+  }
+}
 
 tasks.jar {
-  destinationDirectory.set(file("$rootDir/dyndns/dist"))
+  destinationDirectory.set(file("$rootDir/dist"))
+  archiveFileName.set("DynDNS-${pluginVersion}.jar")
 }
