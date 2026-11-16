@@ -46,3 +46,9 @@ tasks.jar {
   destinationDirectory.set(file("$rootDir/dist"))
   archiveFileName.set("DynDNS-${version}.jar")
 }
+
+tasks.register("printPluginVersion") {
+  doLast {
+    println(project.version)
+  }
+}
