@@ -1,4 +1,4 @@
-val pluginVersion = project.version.toString()
+version = project.version.toString()
 val apiVersion = providers.gradleProperty("apiVersion").get()
 
 plugins {
@@ -32,11 +32,11 @@ java {
 }
 
 tasks.processResources {
-  inputs.property("version", pluginVersion)
+  inputs.property("version", version)
 
   filesMatching("plugin.yml") {
     expand(
-      "version" to pluginVersion,
+      "version" to version,
       "apiVersion" to apiVersion
     )
   }
@@ -44,5 +44,5 @@ tasks.processResources {
 
 tasks.jar {
   destinationDirectory.set(file("$rootDir/dist"))
-  archiveFileName.set("DynDNS-${pluginVersion}.jar")
+  archiveFileName.set("DynDNS-${version}.jar")
 }
