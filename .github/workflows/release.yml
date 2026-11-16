@@ -21,6 +21,11 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Check Java and Gradle versions
+        run: |
+          java -version
+          ./gradlew --version
+
       - name: Validate release tag
         shell: bash
         run: |
